@@ -1,0 +1,89 @@
+ability Stream e where
+  emit : e ->{Stream e} ()
+
+toList : '{Stream e} r -> [e]
+toList es =
+  h : [e] -> Request {Stream e} r -> [e]
+  h acc = cases
+    {Stream.emit e -> k} ->
+      handle k () with h (acc ++ [e])
+    {_} -> acc
+  handle !es with h []
+
+> toList 'let
+  Stream.emit 1
+  Stream.emit 2
+  Stream.emit 3
+
+fromList : [e] -> {Stream e} ()
+fromList es = match es with
+  [] -> ()
+  h +: t ->
+    Stream.emit h
+    fromList t
+
+> toList '(fromList [0,1,2,3,4])
+
+foldLeft : (b -> a -> b) -> b -> '{Stream a} () -> b
+foldLeft f b s =
+  h : b -> Request {Stream a} () -> b
+  h acc = cases
+    {Stream.emit e -> k} ->
+      handle k () with h (f acc e)
+    {_} -> acc
+  handle !s with h b
+
+sum : '{Stream Nat} () -> Nat
+sum s = foldLeft (+) 0 s
+
+> sum '(Stream.fromList [20, 20, 2])
+
+map : (a -> b) -> '{Stream a} r -> '{Stream b} r
+map f s =
+  h : Request {Stream a} r -> {Stream b} r
+  h = cases
+    {Stream.emit a -> k} -> let
+      emit (f a)
+      handle k () with h
+    {r} -> r
+  'handle !s with h
+
+> toList <| map ((+) 2) 'let
+  emit 40
+  69
+
+filter : (a -> Boolean) -> '{Stream a} r -> '{Stream a} r
+filter p s =
+  h : Request {Stream a} r -> {Stream a} r
+  h = cases
+    {Stream.emit a -> k} ->
+      if p a then let 
+        emit a
+        handle k () with h
+      else handle k () with h
+    {r} -> r
+  'handle !s with h
+
+> toList <| filter ((==) 42) 'let
+  emit 1
+  emit 42
+
+-- zip : '{Stream a} r -> '{Stream b} r -> '{Stream (a, b)} r
+
+take : Nat -> '{Stream a} r -> '{Stream a} r
+take n s =
+  h : Nat -> Request {Stream a} r -> {Stream a} r
+  h i = cases
+    {Stream.emit a -> k} -> let
+      if i > 0 then Stream.emit a else ()
+      handle k () with (h <| decrement i)
+    {r} -> r
+  'handle !s with h n
+
+> toList <| take 3 'let
+  emit 1
+  emit 2
+  emit 3
+  emit 69
+        
+

@@ -1,0 +1,19 @@
+ability Abort where
+  abort : a
+
+toOptionalz.handler : Request {g, Abort} a -> {g} Optional a
+toOptionalz.handler = cases
+  {abort -> _} -> None
+  {a} -> Some a
+
+toOptionalz : '{g, Abort} a -> {g} Optional a
+toOptionalz a = handle !a with toOptionalz.handler
+
+abortEven : Nat -> {Abort} Nat
+abortEven n = if mod n 2 == 0 then abort else n
+
+> toOptionalz 'let
+    abort
+    69
+
+> toOptionalz 'let 42

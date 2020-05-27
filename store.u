@@ -1,0 +1,28 @@
+use .base
+
+ability Store s where
+  get : s
+  put : s -> ()
+
+handleStore : v -> Request {Store v} a -> a
+handleStore v = cases
+  {Store.get -> k} ->
+    handle k v with handleStore v
+  {Store.put v' -> k} ->
+    handle k () with handleStore v' 
+
+modify : (a -> {g} a) -> {g, Store a} ()
+modify f = put (f get)
+
+fumble : Nat -> {Store Nat} Nat
+fumble i =
+  put i
+  put (get + 1)
+  put (get + 1)
+  get
+
+fumble' : Nat -> {Store Nat} ()
+fumble' n =
+  put n
+  modify (x -> x + 2)
+  
