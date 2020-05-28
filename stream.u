@@ -84,23 +84,44 @@ take n s =
   emit 3
   emit 69
         
-zip : '{Stream a} r -> '{Stream b} r -> '{Stream (a, b)} r
-zip as bs =
+terminated : '{Stream a} r -> '{Stream (Optional a)} r
+terminated s =
+  h : Request (Stream a) r -> {Stream (Optional a)} r
+  h = cases
+    {r} -> let
+      emit None
+      r
+    {Stream.emit a -> k} -> let
+      emit (Some a)
+      handle k () with h
+  'handle !s with h
 
+> toList <| terminated 'let
+  emit 1
+  emit 2
+  emit 3
 
-  -- hb : a -> '{Stream a} r -> Request (Stream b) r ->{Stream (a, b)} r
-  hb : a -> '{Stream a} r -> Request {Stream b} r ->  {Stream (a, b)} r
-  hb a sa = cases
-    {r} -> r
-    {Stream.emit b -> k} -> let
-      emit (a, b)
-      handle k () with 
+-- zip : '{Stream a} r -> '{Stream b} r -> '{Stream (a, b)} r
+-- zip as bs =
 
-  -- ha : '{Stream b} r -> Request (Stream a) r ->{Stream (a, b)} r
-  ha : '{Stream b} r -> Request {Stream a} r -> {Stream (a, b)} r
-  ha sb = cases
-    {r} -> r
-    {Stream.emit a -> k} ->
-      handle k () with (hb a sb)
+--   hb : a -> '{Stream a} r -> Request (Stream b) r -> {Stream (a, b)} r
+--   hb a sa = cases
+--     {r} -> r
+--     {Stream.emit b -> k} -> let
+--       emit (a, b)
+--       !sa
+--       handle k () with (ha bs)
 
-  'handle !as with (ha bs)
+--   ha : '{Stream b} r -> Request (Stream a) r -> {Stream (a, b)} r
+--   ha sb = cases
+--     {r} -> r
+--     {Stream.emit a -> k} -> let
+--       !sb
+--       handle k () with (hb a as)
+  
+--   'handle !as with (ha bs)
+
+-- > toList <| let
+-- as = '(emit 1)
+-- bs = '(emit 2)
+-- zip as bs

@@ -1,0 +1,12 @@
+ability Ask a where
+  ask : {Ask a} a
+
+provide : a -> '{g, Ask a} r -> {g} r
+provide a asker =
+  h : Request {Ask a} r -> r
+  h = cases
+    {r} -> r
+    {Ask.ask -> k} -> handle k a with h
+  handle !asker with h
+
+> provide 2 '(ask + 40)
