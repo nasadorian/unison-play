@@ -11,15 +11,15 @@ toList es =
   handle !es with h []
 
 > toList 'let
-  Stream.emit 1
-  Stream.emit 2
-  Stream.emit 3
+  emit 1
+  emit 2
+  emit 3
 
 fromList : [e] -> {Stream e} ()
 fromList es = match es with
   [] -> ()
   h +: t ->
-    Stream.emit h
+    emit h
     fromList t
 
 > toList '(fromList [0,1,2,3,4])
@@ -36,7 +36,7 @@ foldLeft f b s =
 sum : '{Stream Nat} () -> Nat
 sum s = foldLeft (+) 0 s
 
-> sum '(Stream.fromList [20, 20, 2])
+> sum '(fromList [20, 20, 2])
 
 map : (a -> b) -> '{Stream a} r -> '{Stream b} r
 map f s =
@@ -68,8 +68,6 @@ filter p s =
   emit 1
   emit 42
 
--- zip : '{Stream a} r -> '{Stream b} r -> '{Stream (a, b)} r
-
 take : Nat -> '{Stream a} r -> '{Stream a} r
 take n s =
   h : Nat -> Request {Stream a} r -> {Stream a} r
@@ -86,4 +84,23 @@ take n s =
   emit 3
   emit 69
         
+zip : '{Stream a} r -> '{Stream b} r -> '{Stream (a, b)} r
+zip as bs =
 
+
+  -- hb : a -> '{Stream a} r -> Request (Stream b) r ->{Stream (a, b)} r
+  hb : a -> '{Stream a} r -> Request {Stream b} r ->  {Stream (a, b)} r
+  hb a sa = cases
+    {r} -> r
+    {Stream.emit b -> k} -> let
+      emit (a, b)
+      handle k () with 
+
+  -- ha : '{Stream b} r -> Request (Stream a) r ->{Stream (a, b)} r
+  ha : '{Stream b} r -> Request {Stream a} r -> {Stream (a, b)} r
+  ha sb = cases
+    {r} -> r
+    {Stream.emit a -> k} ->
+      handle k () with (hb a sb)
+
+  'handle !as with (ha bs)
